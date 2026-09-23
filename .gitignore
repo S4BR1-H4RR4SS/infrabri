@@ -1,0 +1,34 @@
+# Local files
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*~
+.vscode/
+.idea/
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+id_rsa*
+id_ed25519*
+
+# Infrastructure state and private inputs
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+crash.log
+
+# Runtime data
+caddy_data/
+caddy_config/
+
+# dist/index.html is the website source and must stay tracked.

@@ -1,0 +1,15 @@
+infrabri.be {
+    root * /srv
+    encode zstd gzip
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        X-Frame-Options DENY
+        -Server
+    }
+    file_server
+}
+
+www.infrabri.be {
+    redir https://infrabri.be{uri} permanent
+}
