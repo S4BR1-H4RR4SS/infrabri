@@ -122,6 +122,35 @@
   const originalTextNodes = [];
   while (walker.nextNode()) originalTextNodes.push({node:walker.currentNode, value:walker.currentNode.nodeValue});
   const buttons = Array.from(document.querySelectorAll("[data-language]"));
+  const themeButtons = Array.from(document.querySelectorAll("[data-theme-mode]"));
+  const themePicker = document.querySelector(".theme-switch");
+  let activeThemeMode = "auto";
+  let themeTimer = null;
+  function readThemeMode(){
+    try {
+      const saved = localStorage.getItem("infrabri-theme-mode");
+      if (saved === "auto" || saved === "light" || saved === "dark") return saved;
+    } catch (error) {}
+    return "auto";
+  }
+  function scheduledTheme(){
+    const hour = new Date().getHours();
+    return hour >= 7 && hour < 19 ? "light" : "dark";
+  }
+  function applyThemeMode(mode){
+    activeThemeMode = mode;
+    document.documentElement.dataset.theme = mode === "auto" ? scheduledTheme() : mode;
+    themeButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.themeMode === mode)));
+    if (themeTimer !== null) window.clearTimeout(themeTimer);
+    if (mode === "auto"){
+      const now = new Date();
+      const next = new Date(now);
+      if (now.getHours() < 7) next.setHours(7,0,0,0);
+      else if (now.getHours() < 19) next.setHours(19,0,0,0);
+      else { next.setDate(next.getDate()+1); next.setHours(7,0,0,0); }
+      themeTimer = window.setTimeout(() => applyThemeMode("auto"), Math.max(1000,next.getTime()-now.getTime()+100));
+    }
+  }
   function applyLanguage(language, mode){
     const dictionary = translations[language] || {};
     for (const item of originalTextNodes){
@@ -147,9 +176,15 @@
     if (nav) nav.setAttribute("aria-label", language === "nl" ? "Hoofdnavigatie" : language === "fr" ? "Navigation principale" : "Main navigation");
     const picker = document.querySelector(".language-switch");
     if (picker) picker.setAttribute("aria-label", language === "nl" ? "Taal kiezen" : language === "fr" ? "Choisir la langue" : "Choose language");
+    if (themePicker) themePicker.setAttribute("aria-label", language === "nl"
+      ? "Thema: automatisch volgens lokale tijd (licht 07:00–19:00, anders donker)"
+      : language === "fr"
+        ? "Thème : automatique selon l’heure locale (clair de 07 h à 19 h, sombre le reste du temps)"
+        : "Theme: automatic follows local time (light 07:00–19:00, dark otherwise)");
     buttons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.language === mode)));
   }
   let mode = readMode();
+  applyThemeMode(readThemeMode());
   let currentLanguage = mode === "auto" ? detectLanguage() : mode;
   applyLanguage(currentLanguage, mode);
   buttons.forEach(button => {
@@ -160,7 +195,17 @@
       applyLanguage(currentLanguage, mode);
     });
   });
-})();
-</script>
+
+  themeButtons.forEach(button => {
+    button.addEventListener("click", function(){
+      activeThemeMode = button.dataset.themeMode;
+      try { localStorage.setItem("infrabri-theme-mode", activeThemeMode); } catch (error) {}
+      applyThemeMode(activeThemeMode);
+    });
+  });
+  document.addEventListener("visibilitychange", function(){
+    if (!document.hidden && activeThemeMode === "auto") applyThemeMode("auto");
+  });
+})();</script>
 </body>
 </html>
